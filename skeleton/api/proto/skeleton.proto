@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package skeleton;
+
+option go_package = "/hello";
+
+message HelloRequest {
+   string name = 1;
+}
+
+message HelloResponse {
+  string answer = 1;
+}
+
+service HelloWorld {
+  rpc SayHello(HelloRequest) returns (HelloResponse);
+  rpc SaveHello(HelloRequest) returns (HelloResponse);
+}
+
+
