@@ -3,22 +3,29 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/CapyDevelop/go_platform/skeleton/internal/app"
 	"github.com/CapyDevelop/go_platform/skeleton/internal/config"
-	"log/slog"
+	"github.com/CapyDevelop/go_platform/skeleton/logger"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := config.New()
+	cfg := config.MustLoad()
 
-	logger := NewSlogLogger(cfg.Logger.Level, cfg.Logger.Encoding)
+	fmt.Printf("%#v", cfg)
 
-	fmt.Println(ctx, cfg)
+	slogLogger := logger.NewSlogLogger(cfg.Logger.Level, cfg.Logger.Encoding)
+
+	application := app.New(slogLogger, cfg)
+
+	go func() {
+		application.GRPCServer.MustRun()
+	}()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM, os.Interrupt)
@@ -30,33 +37,5 @@ func main() {
 	sig := <-sigCh
 
 	cancel()
-
-	logger.Info("received signal, exiting", "signal", sig)
-}
-
-func NewSlogLogger(level, encoding string) *slog.Logger {
-	var (
-		log *slog.Logger
-		opt *slog.HandlerOptions
-	)
-
-	switch level {
-	case "DEBUG":
-		opt = &slog.HandlerOptions{Level: slog.LevelDebug}
-	case "INFO":
-		opt = &slog.HandlerOptions{Level: slog.LevelInfo}
-	case "WARN":
-		opt = &slog.HandlerOptions{Level: slog.LevelWarn}
-	case "ERROR":
-		opt = &slog.HandlerOptions{Level: slog.LevelError}
-	}
-
-	switch encoding {
-	case "console":
-		log = slog.New(slog.NewTextHandler(os.Stdout, opt))
-	case "json":
-		log = slog.New(slog.NewJSONHandler(os.Stdout, opt))
-	}
-
-	return log
+	slogLogger.Info("received signal, exiting", "signal", sig)
 }

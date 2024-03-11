@@ -37,3 +37,18 @@ ifndef IS_LINT_INSTALLED
 	@echo "+ $@"
 	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./bin v$(LINT_VERSION)
 endif
+
+gen:
+	protoc -I=api/proto \
+  	--go_out=api/gen/go \
+	--go-grpc_out=api/gen/go \
+	skeleton.proto
+
+	python3 -m grpc_tools.protoc \
+	-Iapi/proto \
+	--python_out=api/gen/python \
+	--pyi_out=api/gen/python \
+	--grpc_python_out=api/gen/python \
+	skeleton.proto
+
+gen2:
